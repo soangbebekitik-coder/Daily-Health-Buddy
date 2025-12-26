@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Health Buddy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #22c55e;
+            --primary-dark: #15803d;
+            --dark-blue: #1e293b;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --border: #f1f5f9;
+        }
+
+        * { box-sizing: border-box; font-family: 'Outfit', sans-serif; margin: 0; padding: 0; }
+
+        body {
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 0;
+        }
+
+
+        .phone-container {
+            width: 100vw;
+            height: 100vh;
+            background: var(--bg);
+            border-radius: 0;
+            box-shadow: none;
+            overflow: hidden;
+            position: relative;
+            border: none;
+        }
+
+
+        .screen-content {
+            padding: 24px;
+            height: calc(100% - 70px);
+            overflow-y: auto;
+            display: none;
+        }
+
+        .active { display: block; }
+
+        h2 { font-size: 24px; margin-bottom: 8px; color: var(--text-dark); text-align: center; }
+        .input-group { margin-bottom: 16px; }
+        label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-dark); }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .app-logo { width: 100px; height: 100px; object-fit: contain; margin-bottom: 15px; border-radius: 20px; }
+
+        .gender-selector { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .gender-btn {
+            border: 1px solid #e2e8f0;
+            padding: 15px 5px;
+            border-radius: 15px;
+            text-align: center;
+            background: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .gender-btn.selected { border-color: var(--primary); background: #f0fdf4; color: var(--primary-dark); }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: var(--dark-blue);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-weight: 700;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        
+        .btn-save { background: var(--primary) !important; }
+
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 25px rgba(34, 197, 94, 0.1);
+        }
+        .summary-photo {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            overflow: hidden;
+            border: 3px solid var(--primary);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .summary-photo img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .summary-photo i { color: #94a3b8; }
+
+        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .metric-card { background: white; padding: 18px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); cursor: pointer; }
+        
+        .video-card { width: 100%; height: 180px; background: #000; border-radius: 20px; overflow: hidden; margin-top: 10px; }
+
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+        .info-tile { background: white; padding: 12px; border-radius: 15px; display: flex; align-items: center; gap: 10px; }
+        .menu-item { background: white; padding: 15px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+
+        .schedule-list { margin-top: 15px; text-align: left; }
+        .schedule-item { background: #f0fdf4; padding: 10px; border-radius: 10px; margin-bottom: 8px; border-left: 4px solid var(--primary); }
+        .schedule-item small { color: var(--text-light); }
+
+        .bottom-nav {
+            position: absolute; bottom: 0; width: 100%; height: 70px;
+            background: white; display: flex; justify-content: space-around;
+            align-items: center; border-top: 1px solid #f1f5f9;
+        }
+        .nav-item { text-align: center; color: #94a3b8; cursor: pointer; font-size: 10px; }
+        .nav-item.active { color: var(--primary); }
+
+        .checkbox-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; cursor: pointer; }
+        .checkbox-wrapper input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); }
+
+        /* Logic Styles */
+        .modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal-content { background: white; padding: 25px; border-radius: 24px; width: 90%; text-align: center; }
+        
+        .water-fill {
+            width: 100%; height: 0%; background: #3b82f6; transition: height 0.5s ease;
+            position: absolute; bottom: 0;
+        }
+        .glass-ui {
+            width: 40px; height: 60px; border: 2px solid #cbd5e1; border-top: none; 
+            border-radius: 0 0 10px 10px; position: relative; overflow: hidden;
+        }
+
+        .meal-input-group { background: #fff; padding: 15px; border-radius: 20px; margin-bottom: 15px; border: 1px solid #eee; text-align: left; }
+        .meal-input-group label { font-size: 11px; font-weight: bold; color: var(--text-light); display: block; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="phone-container">
+    
+    <div id="screen-login" class="screen-content active">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="https://i.ibb.co.com/tp7G04Zd/daily-health-buddy.png" alt="Logo" class="app-logo">
+            <h2 data-lang="login_title">Daily Health Buddy</h2>
+        </div>
+        
+        <div class="input-group">
+            <label data-lang="label_name">Full Name</label>
+            <input type="text" id="input-name" placeholder="eg. John Doe">
+        </div>
+        <div class="input-group">
+            <label><span data-lang="label_job">Occupation</span> <small style="color:var(--text-light); font-weight:normal;">(Optional)</small></label>
+            <input type="text" id="input-job" placeholder="eg. Student">
+        </div>
+        <div class="input-group">
+            <label data-lang="label_age">Age</label>
+            <input type="number" id="input-age" placeholder="eg. 19">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="input-group">
+                <label data-lang="label_weight">Weight (kg)</label>
+                <input type="number" id="input-weight" placeholder="eg. 65">
+            </div>
+            <div class="input-group">
+                <label data-lang="label_height">Height (cm)</label>
+                <input type="number" id="input-height" placeholder="eg. 175">
+            </div>
+        </div>
+
+        <label data-lang="label_gender">Gender</label>
+        <div class="gender-selector">
+            <div class="gender-btn selected" onclick="selectGender(this, 'Male')"><i data-lucide="user"></i><br><span data-lang="male">Male</span></div>
+            <div class="gender-btn" onclick="selectGender(this, 'Female')"><i data-lucide="user-round"></i><br><span data-lang="female">Female</span></div>
+            <div class="gender-btn" onclick="selectGender(this, 'Other')"><i data-lucide="users"></i><br><span data-lang="other">Other</span></div>
+        </div>
+
+        <div class="checkbox-wrapper">
+            <input type="checkbox" id="allow-notif">
+            <div onclick="document.getElementById('allow-notif').click()">
+                <p style="font-size: 13px; font-weight: 600;" data-lang="notif_title">Enable Notifications</p>
+                <p style="font-size: 11px; color: #64748b;" data-lang="notif_desc">Get health reminders daily</p>
+            </div>
+        </div>
+
+        <button class="btn-primary" onclick="validateLogin()" data-lang="btn_start">Get Started</button>
+    </div>
+
+    <div id="screen-home" class="screen-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+                <p style="font-size:14px; color:#64748b"><span data-lang="greeting">Hey</span>, <span id="display-name">User</span> 👋</p>
+                <h3 style="font-size:18px" data-lang="summary_title">Your Health summary</h3>
+            </div>
+            <i data-lucide="calendar" onclick="toggleCalendar()" style="cursor: pointer; color: var(--primary);"></i>
+        </div>
+
+        <div class="summary-card">
+            <div>
+                <p style="font-size: 12px; color: var(--text-light);" data-lang="label_job">Occupation</p>
+                <h2 id="display-job" style="text-align: left; margin: 5px 0; color: var(--dark-blue);">User</h2>
+                <p style="font-size: 11px; color: var(--primary); font-weight: 600;"><span data-lang="age_status">Age Status</span>: <span id="dash-age">0</span></p>
+            </div>
+            <div class="summary-photo">
+                <i data-lucide="user" class="default-icon" style="width:35px; height:35px"></i>
+                <img class="user-photo-view" src="" alt="profile">
+            </div>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card" onclick="updateVal('sleep')">
+                <i data-lucide="moon" style="color:var(--primary); margin-bottom:10px"></i>
+                <h4 data-lang="m_sleep">Sleep</h4>
+                <div class="value" id="v-sleep">7h 05m</div>
+            </div>
+            <div class="metric-card" onclick="updateVal('stress')">
+                <i data-lucide="heart" style="color:#ef4444; margin-bottom:10px"></i>
+                <h4 data-lang="m_stress">Stress</h4>
+                <div class="value" id="v-stress">78/100</div>
+            </div>
+            <div class="metric-card" onclick="updateVal('steps')">
+                <i data-lucide="footprints" style="color:#3b82f6; margin-bottom:10px"></i>
+                <h4 data-lang="m_steps">Steps</h4>
+                <div class="value" id="v-steps">4890/10k</div>
+            </div>
+            <div class="metric-card" onclick="updateVal('meals')">
+                <i data-lucide="utensils" style="color:#a855f7; margin-bottom:10px"></i>
+                <h4 data-lang="m_diet">Meals</h4>
+                <div class="value" id="v-meals">2100 kcal</div>
+            </div>
+            <div class="metric-card" style="grid-column: span 2; display: flex; justify-content: space-between; align-items: center;" onclick="updateVal('water')">
+                <div>
+                    <i data-lucide="droplet" style="color:#0ea5e9; margin-bottom:5px"></i>
+                    <h4 data-lang="m_water">Water Intake</h4>
+                    <div class="value"><span id="v-water-current">0</span> / <span id="v-water-target">2000</span> ml</div>
+                </div>
+                <div class="glass-ui">
+                    <div id="water-fill" class="water-fill"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="video-section" style="margin-top: 20px;">
+            <h4 style="font-size: 14px; color: var(--text-dark);" data-lang="video_title">Daily Recommendation Video</h4>
+            <div class="video-card">
+                <iframe width="100%" height="100%" src="https://www.youtube.com/embed/inpok4MKVLM" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <div id="scr-meals-schedule" class="screen-content">
+        <div style="display:flex; align-items:center; margin-bottom:20px;">
+            <i data-lucide="arrow-left" onclick="showScreen('screen-home')" style="cursor:pointer"></i>
+            <h2 style="margin:0 0 0 10px;">Jadwal Makan</h2>
+        </div>
+        <div class="meal-input-group">
+            <label>⏰ JAM SARAPAN</label>
+            <input type="time" id="time-breakfast" value="07:00">
+        </div>
+        <div class="meal-input-group">
+            <label>⏰ JAM MAKAN SIANG</label>
+            <input type="time" id="time-lunch" value="12:30">
+        </div>
+        <div class="meal-input-group">
+            <label>⏰ JAM MAKAN MALAM</label>
+            <input type="time" id="time-dinner" value="19:00">
+        </div>
+        <button class="btn-primary" style="background:var(--primary)" onclick="goToCalorieCounter()">Simpan & Lanjut</button>
+    </div>
+
+    <div id="scr-meals-calc" class="screen-content">
+        <div style="display:flex; align-items:center; margin-bottom:20px;">
+            <i data-lucide="arrow-left" onclick="showScreen('scr-meals-schedule')" style="cursor:pointer"></i>
+            <h2 style="margin:0 0 0 10px;">Hitung Kalori</h2>
+        </div>
+        <div class="meal-input-group" style="border-left: 5px solid #f1c40f;">
+            <label>SARAPAN (<span id="set-time-b"></span>)</label>
+            <input type="text" id="menu-breakfast" placeholder="Contoh: Nasi Goreng">
+        </div>
+        <div class="meal-input-group" style="border-left: 5px solid #e67e22;">
+            <label>MAKAN SIANG (<span id="set-time-l"></span>)</label>
+            <input type="text" id="menu-lunch" placeholder="Contoh: Ayam Bakar">
+        </div>
+        <div class="meal-input-group" style="border-left: 5px solid #9b59b6;">
+            <label>MAKAN MALAM (<span id="set-time-d"></span>)</label>
+            <input type="text" id="menu-dinner" placeholder="Contoh: Salad">
+        </div>
+        <div id="calorie-result" style="background:var(--dark-blue); color:white; padding:20px; border-radius:25px; margin:20px 0; display:none;">
+            <small>ESTIMASI TOTAL HARI INI</small>
+            <h1 style="margin:0"><span id="total-kcal">0</span> kcal</h1>
+            <p id="kcal-feedback" style="font-size:12px; color:var(--primary); margin-top:5px;"></p>
+        </div>
+        <button class="btn-primary" onclick="calculateCalories()">Hitung Kalori 🔥</button>
+        <button class="btn-primary" style="background:#cbd5e1; color:var(--dark-blue)" onclick="showScreen('screen-home')">Selesai</button>
+    </div>
+
+    <div id="scr-sleep" class="screen-content">
+        <div style="display:flex; align-items:center; margin-bottom:20px;">
+            <i data-lucide="arrow-left" onclick="showScreen('screen-home')" style="cursor:pointer"></i>
+            <h2 style="margin:0 0 0 15px;">Sleep Tracker</h2>
+        </div>
+        <div class="meal-input-group">
+            <label>😴 JAM TIDUR (MALAM)</label>
+            <input type="time" id="sleep-start" value="22:00">
+        </div>
+        <div class="meal-input-group">
+            <label>☀️ JAM BANGUN (PAGI)</label>
+            <input type="time" id="sleep-end" value="06:00">
+        </div>
+        <div id="sleep-result" style="display:none; padding:20px; border-radius:25px; margin:20px 0; text-align:center;">
+            <h3 id="sleep-status" style="margin:0">Kualitas: -</h3>
+            <p id="sleep-duration" style="font-size:14px; margin:5px 0;"></p>
+            <p id="sleep-notif" style="font-size:12px; font-weight:bold;"></p>
+        </div>
+        <button class="btn-primary" style="background:#f1c40f; color:#000" onclick="analyzeSleep()">Analisis Tidur 🌙</button>
+    </div>
+
+    <div id="screen-profile" class="screen-content">
+        <h3 style="text-align: center; margin-bottom: 20px;" data-lang="nav_profile">Profile</h3>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div class="summary-photo" style="margin: 0 auto; width: 90px; height: 90px; cursor: pointer;" onclick="document.getElementById('file-input').click()">
+                <i data-lucide="user" class="default-icon" style="width:45px; height:45px"></i>
+                <img class="user-photo-view" src="" alt="profile">
+                <div style="position: absolute; bottom: 0; background: rgba(30, 41, 59, 0.7); width: 100%; color: white; font-size: 10px; padding: 2px;">Edit</div>
+            </div>
+            <input type="file" id="file-input" style="display:none" accept="image/*" onchange="previewFile()">
+            <h3 id="display-name-2">User</h3>
+            <p id="display-job-2" style="color:var(--text-light); font-size:13px">User</p>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-tile"><i data-lucide="user" style="color:var(--primary)"></i><b id="display-gender">Male</b></div>
+            <div class="info-tile"><i data-lucide="calendar" style="color:#0d9488"></i><b id="display-age">0 y.o</b></div>
+            <div class="info-tile"><i data-lucide="weight" style="color:#a855f7"></i><b id="display-weight">0 kg</b></div>
+            <div class="info-tile"><i data-lucide="ruler" style="color:#3b82f6"></i><b id="display-height">0 cm</b></div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <h4 style="font-size: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="clock" style="width:18px; color: var(--primary);"></i> <span data-lang="menu_schedule">My Schedule</span>
+            </h4>
+            <div id="profile-schedule-list" class="schedule-list">
+                <p style="font-size: 12px; color: #94a3b8; text-align: center;">No schedule yet.</p>
+            </div>
+        </div>
+
+        <div class="menu-item" style="margin-top:20px">
+            <span data-lang="menu_lang">Language</span>
+            <select id="lang-select" onchange="changeLanguage(this.value)" style="width: auto; border: none; font-weight: 600; color: var(--primary);">
+                <option value="en">English</option>
+                <option value="id">Indonesia</option>
+            </select>
+        </div>
+
+        <div class="menu-item">
+            <span data-lang="notif_title">Notifications</span>
+            <input type="checkbox" id="profile-notif-toggle" style="width: auto; accent-color: var(--primary);">
+        </div>
+
+        <div class="menu-item" onclick="logout()" style="color: #ef4444; cursor: pointer;">
+            <span data-lang="menu_logout">Log Out</span>
+            <i data-lucide="log-out"></i>
+        </div>
+    </div>
+
+    <div id="modal-water" class="modal">
+        <div class="modal-content">
+            <span onclick="closeWaterModal()" style="float:right; cursor:pointer">✕</span>
+            <h3>💧 Water Tracker</h3>
+            <div style="margin:20px 0;">
+                <label>SET TARGET HARI INI (ml)</label>
+                <input type="number" id="input-target" value="2000" onchange="setNewTarget()" style="text-align:center">
+            </div>
+            <div style="background:#f0f9ff; padding:15px; border-radius:20px; margin-bottom:20px;">
+                <div>PROGRESS SEKARANG</div>
+                <div style="font-size:24px; font-weight:bold; color:#3b82f6"><span id="modal-current-val">0</span> ml</div>
+            </div>
+            <button class="btn-primary" onclick="drinkWater()">+ MINUM 250ml</button>
+            <p id="congrats-msg" style="color:var(--primary); font-weight:bold; display:none; margin-top:10px">✨ Target Tercapai! ✨</p>
+        </div>
+    </div>
+
+    <div id="stress-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="color:#ef4444">❤️ Stress Relief</h3>
+            <div style="margin:20px 0">
+                <label>TINGKAT STRES (1-100)</label>
+                <input type="number" id="input-stress-level" value="50" oninput="updateStressUI()">
+            </div>
+            <div id="breathing-circle-container" style="height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff5f5; border-radius: 20px; margin-bottom: 15px;">
+                <div id="breathe-circle" style="width: 40px; height: 40px; background: rgba(239, 68, 68, 0.3); border: 2px solid #ef4444; border-radius: 50%; transition: all 4s ease-in-out;"></div>
+                <p id="breathe-text" style="margin-top: 15px; font-weight: bold; color: #ef4444;">Siap?</p>
+            </div>
+            <button id="btn-breathe" class="btn-primary" style="background:#ef4444" onclick="startBreathing()">MULAI LATIHAN NAPAS</button>
+            <button class="btn-primary" style="background:#cbd5e1; color:black" onclick="closeStressModal()">Tutup</button>
+        </div>
+    </div>
+
+    <div id="calendar-modal" class="modal">
+        <div class="modal-content" style="text-align:left">
+            <h3 data-lang="cal_title" style="margin-bottom: 15px;">Add Schedule</h3>
+            <div class="input-group">
+                <label>Select Date</label>
+                <input type="date" id="cal-date-input">
+            </div>
+            <div class="input-group">
+                <label>Notes / Activity</label>
+                <textarea id="cal-note-input" rows="3" placeholder="eg. Medical Checkup..."></textarea>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-primary" style="background:#ef4444;" onclick="toggleCalendar()">Cancel</button>
+                <button class="btn-primary btn-save" onclick="saveSchedule()">Save Task</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav" id="main-nav" style="display:none">
+        <div class="nav-item active" onclick="showScreen('screen-home')"><i data-lucide="home"></i><br><span data-lang="nav_home">Home</span></div>
+        <div class="nav-item" onclick="showScreen('screen-profile')"><i data-lucide="user"></i><br><span data-lang="nav_profile">Profile</span></div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+    
+    // SOUND ENGINE
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playTone(freq, dur) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+        osc.start();
+        osc.stop(audioCtx.currentTime + dur);
+    }
+
+    // STATE
+    let userStats = {
+        name: "", age: 0, weight: 0, height: 0, job: "User", gender: "Male",
+        water: 0, waterTarget: 2000, stressLevel: 78, steps: 4890,
+        mealTimes: { breakfast: "07:00", lunch: "12:30", dinner: "19:00" }
+    };
+    let schedules = [];
+    let breathingInterval;
+    let isTracking = false;
+    let lastMag = 0;
+
+    const dictionary = {
+        en: {
+            login_title: "Daily Health Buddy", label_name: "Full Name", label_job: "Occupation", label_age: "Age",
+            label_weight: "Weight (kg)", label_height: "Height (cm)", label_gender: "Gender",
+            male: "Male", female: "Female", other: "Other", notif_title: "Enable Notifications",
+            notif_desc: "Get health reminders daily", btn_start: "Get Started", greeting: "Hey",
+            summary_title: "Your Health summary", age_status: "Professional Age", m_sleep: "Sleep",
+            m_stress: "Stress", m_steps: "Steps", m_diet: "Meals", m_water: "Water Intake",
+            video_title: "Daily Recommendation Video", nav_home: "Home", nav_profile: "Profile",
+            menu_lang: "Language", menu_logout: "Log Out", cal_title: "Calendar",
+            menu_schedule: "My Schedule"
+        },
+        id: {
+            login_title: "Teman Kesehatan Harian", label_name: "Nama Lengkap", label_job: "Pekerjaan", label_age: "Umur",
+            label_weight: "Berat (kg)", label_height: "Tinggi (cm)", label_gender: "Jenis Kelamin",
+            male: "Pria", female: "Wanita", other: "Lainnya", notif_title: "Aktifkan Notifikasi",
+            notif_desc: "Dapatkan pengingat kesehatan harian", btn_start: "Mulai Sekarang", greeting: "Halo",
+            summary_title: "Ringkasan Kesehatan Anda", age_status: "Usia Profesional", m_sleep: "Tidur",
+            m_stress: "Stres", m_steps: "Langkah", m_diet: "Makan", m_water: "Asupan Air",
+            video_title: "Rekomendasi Video Harian", nav_home: "Beranda", nav_profile: "Profil",
+            menu_lang: "Bahasa", menu_logout: "Keluar", cal_title: "Kalender",
+            menu_schedule: "Jadwal Saya"
+        }
+    };
+
+    function selectGender(el, val) {
+        playTone(400, 0.1);
+        document.querySelectorAll('.gender-btn').forEach(btn => btn.classList.remove('selected'));
+        el.classList.add('selected');
+        userStats.gender = val;
+    }
+
+    function validateLogin() {
+        const requiredFields = ['input-name', 'input-age', 'input-weight', 'input-height'];
+        let allFilled = true;
+        requiredFields.forEach(id => { if(!document.getElementById(id).value) allFilled = false; });
+
+        if(!allFilled) {
+            alert("Please fill in all required fields!");
+            return;
+        }
+
+        playTone(800, 0.2);
+        userStats.name = document.getElementById('input-name').value;
+        userStats.age = document.getElementById('input-age').value;
+        userStats.weight = document.getElementById('input-weight').value;
+        userStats.height = document.getElementById('input-height').value;
+        userStats.job = document.getElementById('input-job').value || "User";
+
+        // Sync to UI
+        document.getElementById('display-name').innerText = userStats.name;
+        document.getElementById('display-name-2').innerText = userStats.name;
+        document.getElementById('display-job').innerText = userStats.job;
+        document.getElementById('display-job-2').innerText = userStats.job;
+        document.getElementById('dash-age').innerText = userStats.age + " yrs";
+        document.getElementById('display-age').innerText = userStats.age + " y.o";
+        document.getElementById('display-weight').innerText = userStats.weight + " kg";
+        document.getElementById('display-height').innerText = userStats.height + " cm";
+        document.getElementById('display-gender').innerText = userStats.gender;
+        
+        showScreen('screen-home');
+    }
+
+    // WATER LOGIC
+    function openWaterModal() {
+        playTone(400, 0.1);
+        document.getElementById('modal-water').style.display = 'flex';
+        document.getElementById('input-target').value = userStats.waterTarget;
+        updateWaterUI();
+    }
+    function closeWaterModal() { document.getElementById('modal-water').style.display = 'none'; }
+    function setNewTarget() {
+        let nt = document.getElementById('input-target').value;
+        if(nt > 0) { userStats.waterTarget = parseInt(nt); updateWaterUI(); }
+    }
+    function drinkWater() {
+        playTone(1200, 0.2);
+        userStats.water += 250;
+        updateWaterUI();
+    }
+    function updateWaterUI() {
+        document.getElementById('v-water-current').innerText = userStats.water;
+        document.getElementById('v-water-target').innerText = userStats.waterTarget;
+        document.getElementById('modal-current-val').innerText = userStats.water;
+        const pct = Math.min((userStats.water / userStats.waterTarget) * 100, 100);
+        document.getElementById('water-fill').style.height = pct + '%';
+        document.getElementById('congrats-msg').style.display = (userStats.water >= userStats.waterTarget) ? 'block' : 'none';
+    }
+
+    // STRESS LOGIC
+    function openStressModal() {
+        playTone(600, 0.1);
+        document.getElementById('stress-modal').style.display = 'flex';
+        document.getElementById('input-stress-level').value = userStats.stressLevel;
+    }
+    function closeStressModal() { 
+        document.getElementById('stress-modal').style.display = 'none'; 
+        stopBreathing();
+    }
+    function updateStressUI() {
+        userStats.stressLevel = document.getElementById('input-stress-level').value;
+        document.getElementById('v-stress').innerText = userStats.stressLevel + "/100";
+    }
+    function startBreathing() {
+        const btn = document.getElementById('btn-breathe');
+        const circle = document.getElementById('breathe-circle');
+        const txt = document.getElementById('breathe-text');
+        if (btn.innerText === "BERHENTI") { stopBreathing(); return; }
+        btn.innerText = "BERHENTI";
+        let phase = 0;
+        const cycle = () => {
+            if (phase === 0) {
+                playTone(300, 0.5);
+                circle.style.transform = "scale(3)";
+                txt.innerText = "TARIK NAPAS...";
+                phase = 1;
+            } else {
+                playTone(200, 0.5);
+                circle.style.transform = "scale(1)";
+                txt.innerText = "BUANG NAPAS...";
+                phase = 0;
+            }
+        };
+        cycle();
+        breathingInterval = setInterval(cycle, 4000);
+    }
+    function stopBreathing() {
+        clearInterval(breathingInterval);
+        document.getElementById('btn-breathe').innerText = "MULAI LATIHAN NAPAS";
+        document.getElementById('breathe-circle').style.transform = "scale(1)";
+        document.getElementById('breathe-text').innerText = "Latihan selesai.";
+        userStats.stressLevel = Math.max(0, userStats.stressLevel - 5);
+        document.getElementById('input-stress-level').value = userStats.stressLevel;
+        updateStressUI();
+    }
+
+    // MEALS LOGIC
+    function goToCalorieCounter() {
+        playTone(700, 0.2);
+        userStats.mealTimes.breakfast = document.getElementById('time-breakfast').value;
+        userStats.mealTimes.lunch = document.getElementById('time-lunch').value;
+        userStats.mealTimes.dinner = document.getElementById('time-dinner').value;
+        document.getElementById('set-time-b').innerText = userStats.mealTimes.breakfast;
+        document.getElementById('set-time-l').innerText = userStats.mealTimes.lunch;
+        document.getElementById('set-time-d').innerText = userStats.mealTimes.dinner;
+        showScreen('scr-meals-calc');
+    }
+    function calculateCalories() {
+        playTone(1000, 0.3);
+        let total = 0;
+        if(document.getElementById('menu-breakfast').value) total += 450;
+        if(document.getElementById('menu-lunch').value) total += 750;
+        if(document.getElementById('menu-dinner').value) total += 550;
+        document.getElementById('total-kcal').innerText = total;
+        document.getElementById('calorie-result').style.display = 'block';
+        document.getElementById('v-meals').innerText = total + " kcal";
+        document.getElementById('kcal-feedback').innerText = total > 1500 ? "Energi tercukupi! 💪" : "Cukupi nutrisimu! 🍎";
+    }
+
+    // SLEEP LOGIC
+    function analyzeSleep() {
+        playTone(600, 0.3);
+        const start = document.getElementById('sleep-start').value;
+        const end = document.getElementById('sleep-end').value;
+        let [h1, m1] = start.split(':').map(Number);
+        let [h2, m2] = end.split(':').map(Number);
+        let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+        if (diff < 0) diff += 1440;
+        let h = Math.floor(diff / 60);
+        let m = diff % 60;
+        document.getElementById('sleep-result').style.display = 'block';
+        document.getElementById('sleep-duration').innerText = `Total: ${h}j ${m}m`;
+        const st = document.getElementById('sleep-status');
+        if(h < 6) { st.innerText = "Buruk 😫"; st.style.color = "red"; }
+        else { st.innerText = "Bagus! ✨"; st.style.color = "green"; }
+        document.getElementById('v-sleep').innerText = `${h}h ${m}m`;
+    }
+
+    // STEPS LOGIC
+    function startStepTracking() {
+        if(isTracking) { alert("Tracking sudah aktif!"); return; }
+        playTone(1000, 0.2);
+        if (typeof DeviceMotionEvent.requestPermission === 'function') {
+            DeviceMotionEvent.requestPermission().then(res => {
+                if (res == 'granted') { window.addEventListener('devicemotion', handleMotion); isTracking = true; }
+            });
+        } else {
+            window.addEventListener('devicemotion', handleMotion);
+            isTracking = true;
+            alert("Tracking Aktif!");
+        }
+    }
+    function handleMotion(e) {
+        let acc = e.accelerationIncludingGravity;
+        let mag = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
+        if (mag - lastMag > 5) {
+            userStats.steps++;
+            document.getElementById('v-steps').innerText = userStats.steps + "/10k";
+        }
+        lastMag = mag;
+    }
+
+    // CORE APP FUNCTIONS
+    function updateVal(type) {
+        playTone(500, 0.05);
+        if(type === 'water') openWaterModal();
+        else if(type === 'stress') openStressModal();
+        else if(type === 'meals') showScreen('scr-meals-schedule');
+        else if(type === 'sleep') showScreen('scr-sleep');
+        else if(type === 'steps') startStepTracking();
+    }
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen-content').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.getElementById('main-nav').style.display = (id === 'screen-login') ? 'none' : 'flex';
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        if(id === 'screen-home') document.querySelectorAll('.nav-item')[0].classList.add('active');
+        if(id === 'screen-profile') document.querySelectorAll('.nav-item')[1].classList.add('active');
+    }
+
+    function toggleCalendar() {
+        playTone(400, 0.1);
+        const modal = document.getElementById('calendar-modal');
+        modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+    }
+
+    function saveSchedule() {
+        const date = document.getElementById('cal-date-input').value;
+        const note = document.getElementById('cal-note-input').value;
+        if(!date || !note) return;
+        playTone(900, 0.2);
+        schedules.push({ date, note });
+        updateScheduleUI();
+        toggleCalendar();
+    }
+
+    function updateScheduleUI() {
+        const container = document.getElementById('profile-schedule-list');
+        if(schedules.length === 0) {
+            container.innerHTML = '<p style="font-size: 12px; color: #94a3b8; text-align: center;">No schedule yet.</p>';
+            return;
+        }
+        container.innerHTML = schedules.map(s => `
+            <div class="schedule-item">
+                <small>${s.date}</small>
+                <p style="font-size: 14px; font-weight: 600;">${s.note}</p>
+            </div>
+        `).join('');
+    }
+
+    function changeLanguage(lang) {
+        document.querySelectorAll('[data-lang]').forEach(el => {
+            const key = el.getAttribute('data-lang');
+            el.innerText = dictionary[lang][key];
+        });
+    }
+
+    function previewFile() {
+        const file = document.getElementById('file-input').files[0];
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            document.querySelectorAll('.user-photo-view').forEach(img => {
+                img.src = reader.result;
+                img.style.display = 'block';
+            });
+            document.querySelectorAll('.default-icon').forEach(icon => icon.style.display = 'none');
+        }
+        if (file) reader.readAsDataURL(file);
+    }
+
+    function logout() {
+        if(confirm("Keluar?")) location.reload();
+    }
+</script>
+</body>
+</html>
